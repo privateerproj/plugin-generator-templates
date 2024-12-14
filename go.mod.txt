@@ -1,3 +1,10 @@
-module github.com/privateerproj/privateer-pack-{{ .ServiceName }}
+module github.com/privateerproj/privateer-pack-{{ .ServiceName }} // Replace this globally with your module name
 
-go 1.20
+go 1.23
+
+require (
+	github.com/privateerproj/privateer-sdk v0.0.15
+)
+
+// Uncomment if you're working locally on a privateer SDK improvement
+// replace github.com/privateerproj/privateer-sdk => ../privateer-sdk

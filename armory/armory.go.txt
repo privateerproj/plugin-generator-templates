@@ -1,66 +1,19 @@
 package armory
 
 import (
-	hclog "github.com/hashicorp/go-hclog"
-	"github.com/spf13/viper"
-
 	"github.com/privateerproj/privateer-sdk/raidengine"
-	"github.com/privateerproj/privateer-sdk/utils"
 )
 
-// Conforms to the Armory interface type
-type {{ .ServiceName }} struct {
-	Tactics map[string][]raidengine.Strike     // Required, allows you to sort which strikes are run for each control
-	Log     hclog.Logger                       // Recommended, allows you to set the log level for each log message
-	Results map[string]raidengine.StrikeResult // Optional, allows cross referencing between strikes
-}
-
-func (a *{{ .ServiceName }}) SetLogger(loggerName string) hclog.Logger {
-	a.Log = raidengine.GetLogger(loggerName, false)
-	return a.Log
-}
-
-func (a *{{ .ServiceName }}) GetTactics() map[string][]raidengine.Strike {
-	return a.Tactics
-}
-
-{{- $ServiceName := .ServiceName }}
-{{- range .Controls }}
-{{- $controlID := .ID }}
-{{- range .TestRequirements }}
-
-// -----
-// Strike and Movements for {{ .IDFriendly }} 
-// -----
-
-// {{ .IDFriendly }} conforms to the Strike function type
-func (a *{{ $ServiceName }}) {{ .IDFriendly  }}() (strikeName string, result raidengine.StrikeResult) {
-	// set default return values
-	strikeName = "{{ .IDFriendly }}"
-	result = raidengine.StrikeResult{
-		Passed:      false,
-		Description: "{{ .Text }}",
-		Message:     "Strike has not yet started.", // This message will be overwritten by subsequent movements
-		DocsURL:     "https://maintainer.com/docs/raids/{{ $ServiceName }}",
-		ControlID:   "{{ $controlID}}",
-		Movements:   make(map[string]raidengine.MovementResult),
+var (
+	Armory   = raidengine.Armory{
+		Tactics: map[string][]raidengine.Strike{
+		{{ range $key, $value := .Tactics }}
+			"{{ $key }}": {
+				{{- range $value }}
+				{{ . }},
+				{{- end }}
+			},
+		{{- end }}
+		},
 	}
-
-	{{- $testID := printf "%s_T01" .IDFriendly }}
-
-	raidengine.ExecuteMovement(&result, {{ $testID }})
-	// TODO: Additional movement calls go here
-
-	return
-}
-
-func {{ $testID }}() (result raidengine.MovementResult) {
-	result = raidengine.MovementResult{
-		Description: "This movement is still under construction",
-		Function:    utils.CallerPath(0),
-	}
-	
-	// TODO: Use this section to write a single step or test that contributes to {{ .IDFriendly }}
-	return
-}
-{{ end }} {{ end }}
+)
