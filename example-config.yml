@@ -1,8 +1,9 @@
 loglevel: Debug
-WriteDirectory: test_output
-raids:
-  {{ .ServiceName }}:
-    tactics: 
+write-directory: test_output
+services:
+  my-cloud-service1:
+    raid: {{ .ServiceName }}
+    tactics:
       - tlp_red
       # - tlp_amber
       # - tlp_green
