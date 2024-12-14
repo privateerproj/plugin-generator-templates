@@ -8,7 +8,7 @@ import (
 
 var (
 	Vessel = raidengine.Vessel{
-		RaidName: {{ .ServiceName }} // Double check that this is what you want the raid to be named
+		RaidName: "{{ .ServiceName }}", // Double check that this is what you want the raid to be named
 	} // Used by the plugin or debug function to run the Raid
 )
 
