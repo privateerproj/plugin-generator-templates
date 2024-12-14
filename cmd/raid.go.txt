@@ -1,7 +1,7 @@
 package cmd
 
 import (
-	"github.com/privateerproj/privateer-pack-{{ .ServiceName }}/armory"
+	"github.com/privateerproj/privateer-raid-{{ .ServiceName }}/armory"
 
 	"github.com/privateerproj/privateer-sdk/raidengine"
 )

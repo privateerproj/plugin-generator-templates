@@ -3,7 +3,7 @@ package main
 import (
 	"fmt"
 
-	"github.com/privateerproj/privateer-pack-{{ .ServiceName }}/cmd"
+	"github.com/privateerproj/privateer-raid-{{ .ServiceName }}/cmd"
 )
 
 var (
