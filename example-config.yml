@@ -2,8 +2,8 @@ loglevel: Debug
 write-directory: test_output
 services:
   my-cloud-service1:
-    raid: {{ .ServiceName }}
-    tactics:
+    plugin: {{ .ServiceName }}
+    test-suites:
       - tlp_red
       # - tlp_amber
       # - tlp_green
