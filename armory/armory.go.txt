@@ -1,13 +1,13 @@
 package armory
 
 import (
-	"github.com/privateerproj/privateer-sdk/raidengine"
+	"github.com/privateerproj/privateer-sdk/pluginkit"
 )
 
 var (
-	Armory   = raidengine.Armory{
-		Tactics: map[string][]raidengine.Strike{
-		{{ range $key, $value := .Tactics }}
+	Armory   = pluginkit.Armory{
+		TestSuites: map[string][]pluginkit.TestSet{
+		{{ range $key, $value := .TestSuites }}
 			"{{ $key }}": {
 				{{- range $value }}
 				{{ . }},

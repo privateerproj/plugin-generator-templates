@@ -1,0 +1,45 @@
+package armory
+
+import (
+	"github.com/privateerproj/privateer-sdk/pluginkit"
+	"github.com/privateerproj/privateer-sdk/utils"
+)
+
+{{- $ServiceName := .ServiceName }}
+{{- range .Controls }}
+{{- $controlID := .ID }}
+{{- range .TestRequirements }}
+
+// -----
+// TestSet and Tests for {{ .IDFriendly }}
+// -----
+
+// {{ .IDFriendly }} conforms to the TestSet function type
+func {{ .IDFriendly  }}() (testSetName string, result pluginkit.TestSetResult) {
+	// set default return values
+	testSetName = "{{ .IDFriendly }}"
+	result = pluginkit.TestSetResult{
+		Passed:      false,
+		Description: "{{ .Text }}",
+		ControlID:   "{{ $controlID}}",
+		Tests:   make(map[string]pluginkit.TestResult),
+	}
+
+	{{- $testID := printf "%s_T01" .IDFriendly }}
+
+	result.ExecuteTest({{ $testID }})
+	// TODO: Additional test calls go here
+
+	return
+}
+
+func {{ $testID }}() (moveResult pluginkit.TestResult) {
+	moveResult = pluginkit.TestResult{
+		Description: "This test is still under construction",
+		Function:    utils.CallerPath(0),
+	}
+
+	// TODO: Use this section to write a single step or test that contributes to {{ .IDFriendly }}
+	return
+}
+{{ end }} {{ end }}
