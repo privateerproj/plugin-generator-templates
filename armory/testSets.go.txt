@@ -19,7 +19,6 @@ func {{ .IDFriendly  }}() (testSetName string, result pluginkit.TestSetResult) {
 	// set default return values
 	testSetName = "{{ .IDFriendly }}"
 	result = pluginkit.TestSetResult{
-		Passed:      false,
 		Description: "{{ .Text }}",
 		ControlID:   "{{ $controlID}}",
 		Tests:   make(map[string]pluginkit.TestResult),
