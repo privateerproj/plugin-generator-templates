@@ -3,7 +3,7 @@ module github.com/privateerproj/privateer-plugin-{{ .ServiceName }} // Replace t
 go 1.23
 
 require (
-	github.com/privateerproj/privateer-sdk v0.0.15
+	github.com/privateerproj/privateer-sdk v0.7.0
 )
 
 // Uncomment if you're working locally on a privateer SDK improvement
