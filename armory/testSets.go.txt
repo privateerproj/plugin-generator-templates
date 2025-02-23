@@ -6,25 +6,29 @@ import (
 )
 
 {{- $ServiceName := .ServiceName }}
+{{- range .ControlFamilies }}
+// ----------
+// TestSets for {{ .Name | prettify }} Control Family
+// ----------
 {{- range .Controls }}
 {{- $controlID := .ID }}
-{{- range .TestRequirements }}
-
+{{- range .Requirements }}
+{{- $requirementID := .ID | prettify }}
 // -----
-// TestSet and Tests for {{ .IDFriendly }}
+// TestSet and Tests for Requirement {{ $requirementID }}
 // -----
 
-// {{ .IDFriendly }} conforms to the TestSet function type
-func {{ .IDFriendly  }}() (testSetName string, result pluginkit.TestSetResult) {
+// {{ $requirementID }} conforms to the TestSet function type
+func {{ $requirementID  }}() (testSetName string, result pluginkit.TestSetResult) {
 	// set default return values
-	testSetName = "{{ .IDFriendly }}"
+	testSetName = "{{ .ID }}"
 	result = pluginkit.TestSetResult{
-		Description: "{{ .Text }}",
-		ControlID:   "{{ $controlID}}",
+		Description: "{{ .Text | prettify }}",
+		ControlID:   "{{ $controlID }}",
 		Tests:   make(map[string]pluginkit.TestResult),
 	}
 
-	{{- $testID := printf "%s_T01" .IDFriendly }}
+	{{- $testID := printf "%s_T01" $requirementID }}
 
 	result.ExecuteTest({{ $testID }})
 	// TODO: Additional test calls go here
@@ -38,7 +42,7 @@ func {{ $testID }}() (testResult pluginkit.TestResult) {
 		Function:    utils.CallerPath(0),
 	}
 
-	// TODO: Use this section to write a single step or test that contributes to {{ .IDFriendly }}
+	// TODO: Use this section to write a single step or test that contributes to {{ $requirementID }}
 	return
 }
-{{ end }} {{ end }}
+{{ end }} {{ end }} {{ end }}
