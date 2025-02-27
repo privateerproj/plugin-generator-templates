@@ -3,10 +3,12 @@ write-directory: test_output
 write: true
 output: yaml
 services:
-  my-cloud-service1:
+  your-service:
     plugin: {{ .ServiceName }}
     test-suites:
-      - tlp_red
-      # - tlp_amber
-      # - tlp_green
-      # - tlp_clear
+      - your_test_suite
+      - your_other_test_suite
+    vars:
+      your: a
+      required: x
+      variables: y

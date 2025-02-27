@@ -10,7 +10,7 @@ var (
 		{{ range $key, $value := .TestSuites }}
 			"{{ $key }}": {
 				{{- range $value }}
-				{{ . | prettify }},
+				{{ . | as_id }},
 				{{- end }}
 			},
 		{{- end }}
