@@ -1,8 +1,8 @@
 package armory
 
 import (
-	"github.com/privateerproj/privateer-sdk/pluginkit"
 	"github.com/privateerproj/privateer-sdk/utils"
+	"github.com/revanite-io/sci/pkg/layer4"
 )
 
 //
@@ -23,35 +23,35 @@ var globalObject interface{}
 
 // Example of a testSet that calls an invasive and non-invasive test.
 // Any number or combination of tests can be called
-func ExampleTestSet01() (testSetName string, result pluginkit.TestSetResult) {
+func ExampleTestSet01() (testSetName string, result layer4.ControlEvaluation) {
 	// set default return values
 	testSetName = "Example_TestSet_01"
-	result = pluginkit.TestSetResult{
-		Description: "The service enforces the use of secure transport protocols for all network communications (e.g., TLS 1.2 or higher).",
-		Message:     "TestSet has not yet started.",            // This message will be overwritten by subsequent tests
-		DocsURL:     "https://maintainer.com/docs/plugins/DEV", // This is an optional link to documentation that will help users better understand the testSet
-		ControlID:   "CCC.C01",                                 // This is the control ID that the testSet is testing against
-		Tests:       make(map[string]pluginkit.TestResult),     // This map will be populated with the results of each test
-		Passed:      false,                                     // This will be updated to true if a test passes, and back to false if a test fails
+	result = layer4.ControlEvaluation{
+		Name:       "The service enforces the use of secure transport protocols for all network communications (e.g., TLS 1.2 or higher).",
+		Message:    "TestSet has not yet started.",            // This message will be overwritten by subsequent tests
+		User_Guide: "https://maintainer.com/docs/plugins/DEV", // This is an optional link to documentation that will help users better understand the testSet
+		Control_Id: "CCC.C01",                                 // This is the control ID that the testSet is testing against
+		Results:    make(map[string]layer4.AssessmentResult),  // This map will be populated with the results of each test
+		Passed:     false,                                     // This will be updated to true if a test passes, and back to false if a test fails
 	}
 
 	result.ExecuteTest(ExampleTest0101)
 
 	// if a test relies on another test to pass, add this type of condition
-	if result.Tests["ExampleTest0101"].Passed {
+	if result.Results["ExampleTest0101"].Passed {
 		// if a test could potentially cause harm to the target env, flag it as invasive like this
-		result.ExecuteInvasiveTest(ExampleTest0102)
+		result.ExecuteTest(ExampleTest0102)
 	}
 
 	return
 }
 
 // ExampleTest0101 does not apply a change to the system
-func ExampleTest0101() (testResult pluginkit.TestResult) {
+func ExampleTest0101() (testResult layer4.AssessmentResult) {
 	// Pretend we're making some API call or other logic to determine if the test is applicable
 	customLogicResults := true
 
-	testResult = pluginkit.TestResult{
+	testResult = layer4.AssessmentResult{
 		Description: "Making an API call to see if HTTPS is enforced.",
 		Function:    utils.CallerPath(0), // This allows interested users to jump directly to the code that is executing this test
 		Passed:      customLogicResults,
@@ -60,13 +60,14 @@ func ExampleTest0101() (testResult pluginkit.TestResult) {
 }
 
 // ExampleTest0102 applies an invasive change to the system. Not all changes are invasive, but this one is.
-// Use ExecuteInvasiveTest() to ensure it is run only when the user has opted in to potentially destructive changes.
-func ExampleTest0102() (testResult pluginkit.TestResult) {
+// Use ExecuteTest() to ensure it is run only when the user has opted in to potentially destructive changes.
+func ExampleTest0102() (testResult layer4.AssessmentResult) {
+	var targetObject interface{} = "This change should create a new storage object"
 	// The functions here can be defined whereever you like
 	// If you have a lot of changes or plan to reuse them, you may want to put them in a separate file
-	change1 := pluginkit.NewChange(
+	change1 := layer4.NewChange(
 		"targetName",
-		"This change should create a new storage object", // For logging purposes. This will be overwritten by the result of a successful apply function.
+		&targetObject, // For logging purposes. This will be overwritten by the result of a successful apply function.
 		applyChange,
 		revertChange,
 	)
@@ -76,18 +77,18 @@ func ExampleTest0102() (testResult pluginkit.TestResult) {
 
 	// A future release may have better object handling for objects returned by the change
 	// For now, toss it onto a global variable if you need to access it later
-	globalObject = change1.TargetObject
+	globalObject = change1.Target_Object
 
 	// If the change is not needed for subsequent tests, revert it now
 	// A future release will use this logic to multi-thread the revert process
 	// Any changes that are not reverted within the test will be reverted together at the end of the testSet
 	change1.Revert()
 
-	// Note that we are not setting Passed to true or false. That will be determined by ExecuteTest() or ExecuteInvasiveTest()
-	testResult = pluginkit.TestResult{
+	// Note that we are not setting Passed to true or false. That will be determined by ExecuteTest() or ExecuteTest()
+	testResult = layer4.AssessmentResult{
 		Description: "Making an API call to see if HTTPS is enforced.",
 		Function:    utils.CallerPath(0), // This allows interested users to jump directly to the code that is executing this test
-		Changes: map[string]*pluginkit.Change{
+		Changes: map[string]*layer4.Change{
 			"TestChange1": change1,
 		},
 	}
@@ -95,7 +96,7 @@ func ExampleTest0102() (testResult pluginkit.TestResult) {
 }
 
 // Mock function to simulate applying a change
-func applyChange() (modifiedObject interface{}, err error) {
+func applyChange() (modifiedObject *interface{}, err error) {
 	// Replace with actual logic
 	return nil, nil
 }

@@ -1,43 +1,40 @@
 package armory
 
 import (
-	"github.com/privateerproj/privateer-sdk/pluginkit"
 	"github.com/privateerproj/privateer-sdk/utils"
+	"github.com/revanite-io/sci/pkg/layer4"
 )
-
-{{- $ServiceName := .ServiceName }}
+{{ $ServiceName := .ServiceName }}
 {{- range .ControlFamilies }}
 // ----------
-// TestSets for {{ .Name | prettify }} Control Family
+// TestSets for {{ .Name | clean_spaces }} Control Family
 // ----------
 {{- range .Controls }}
 {{- $controlID := .ID }}
 {{- range .Requirements }}
-{{- $requirementID := .ID | prettify }}
+{{- $requirementID := .ID | as_id }}
 // -----
 // TestSet and Tests for Requirement {{ $requirementID }}
 // -----
 
 // {{ $requirementID }} conforms to the TestSet function type
-func {{ $requirementID  }}() (testSetName string, result pluginkit.TestSetResult) {
-	// set default return values
-	testSetName = "{{ .ID }}"
-	result = pluginkit.TestSetResult{
-		Description: "{{ .Text | prettify }}",
-		ControlID:   "{{ $controlID }}",
-		Tests:   make(map[string]pluginkit.TestResult),
+func {{ $requirementID  }}() (evaluation layer4.ControlEvaluation) {
+	evaluation = layer4.ControlEvaluation{
+		Name:       "{{ .Text | clean_spaces }}",
+		Control_Id: "{{ $controlID }}",
+		Results:      make(map[string]layer4.AssessmentResult),
 	}
 
 	{{- $testID := printf "%s_T01" $requirementID }}
 
-	result.ExecuteTest({{ $testID }})
+	evaluation.ExecuteTest({{ $testID }})
 	// TODO: Additional test calls go here
 
 	return
 }
 
-func {{ $testID }}() (testResult pluginkit.TestResult) {
-	testResult = pluginkit.TestResult{
+func {{ $testID }}() (testResult layer4.AssessmentResult) {
+	testResult = layer4.AssessmentResult{
 		Description: "This test is still under construction",
 		Function:    utils.CallerPath(0),
 	}

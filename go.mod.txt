@@ -4,7 +4,9 @@ go 1.23
 
 require (
 	github.com/privateerproj/privateer-sdk v0.7.0
+	github.com/revanite-io/sci/pkg v0.1.0
 )
 
-// Uncomment if you're working locally on a privateer SDK improvement
-// replace github.com/privateerproj/privateer-sdk => ../../privateer-sdk
+// Uncomment if you're working on a dependency locally
+// replace github.com/privateerproj/privateer-sdk => ../privateer-sdk
+// replace github.com/revanite-io/sci/pkg => ../sci/pkg
