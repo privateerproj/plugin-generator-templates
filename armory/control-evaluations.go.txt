@@ -1,7 +1,6 @@
 package armory
 
 import (
-	"github.com/privateerproj/privateer-sdk/utils"
 	"github.com/revanite-io/sci/pkg/layer4"
 )
 {{ $ServiceName := .ServiceName }}
@@ -22,21 +21,20 @@ func {{ $requirementID  }}() (evaluation layer4.ControlEvaluation) {
 	evaluation = layer4.ControlEvaluation{
 		Name:       "{{ .Text | clean_spaces }}",
 		Control_Id: "{{ $controlID }}",
-		Results:      make(map[string]layer4.AssessmentResult),
 	}
 
 	{{- $testID := printf "%s_T01" $requirementID }}
 
-	evaluation.ExecuteTest({{ $testID }})
+	evaluation.Evaluate({{ $testID }})
 	// TODO: Additional test calls go here
 
 	return
 }
 
-func {{ $testID }}() (testResult layer4.AssessmentResult) {
-	testResult = layer4.AssessmentResult{
+func {{ $testID }}() (testResult layer4.Assessment) {
+	testResult = layer4.Assessment{
 		Description: "This test is still under construction",
-		Function:    utils.CallerPath(0),
+
 	}
 
 	// TODO: Use this section to write a single step or test that contributes to {{ $requirementID }}
