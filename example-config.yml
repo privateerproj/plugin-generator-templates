@@ -5,9 +5,10 @@ output: yaml
 services:
   your-service:
     plugin: {{ .ServiceName }}
-    test-suites:
-      - your_test_suite
-      - your_other_test_suite
+    policy:
+      catalogs: ["{{ .Metadata.ID | as_id }}"]
+      applicability:{{ range .Metadata.ApplicabilityCategories }}
+        - {{ .ID | as_id }}{{ end }}
     vars:
       your: a
       required: x
