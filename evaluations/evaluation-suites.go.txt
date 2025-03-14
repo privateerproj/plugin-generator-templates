@@ -1,0 +1,10 @@
+package evaluations
+
+import "github.com/revanite-io/sci/pkg/layer4"
+
+var (
+	{{ .Metadata.ID | as_id }} = []*layer4.ControlEvaluation{
+		{{ range .ControlFamilies }}{{ range .Controls }}{{ .ID | as_id }}(),
+		{{ end }}{{ end }}
+	}
+)
