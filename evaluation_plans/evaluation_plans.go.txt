@@ -1,0 +1,19 @@
+package evaluation_plans
+
+import (
+    "github.com/ossf/gemara/layer4"
+    "github.com/MYORG/plugin-{{ .ServiceName }}/evaluation_plans/reusable_steps"
+)
+
+var (
+    // Add more entries here if other catalogs or catalog versions are adopted by the plugin
+    // Then use orchestrator.AddEvaluationSuite to make these available to the user
+    {{ .Catalog.Metadata.Id | snake_case }} = map[string][]layer4.AssessmentStep{
+        // For best results, ensure every assessment id is represented in this map 
+        {{- range .Requirements }}
+        "{{ . }}": {
+            reusable_steps.NotImplemented,
+        },
+        {{- end }}
+    }
+)

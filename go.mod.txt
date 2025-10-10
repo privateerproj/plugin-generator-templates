@@ -1,10 +1,10 @@
-module plugin-{{ .ServiceName }} // Replace this globally with your module name
+module github.com/MYORG/plugin-{{ .ServiceName }} // Replace this globally with your module name
 
 go 1.23
 
 require (
-	github.com/privateerproj/privateer-sdk v1.0.2
-	github.com/revanite-io/sci v0.1.7
+	github.com/privateerproj/privateer-sdk v1.9.0
+	github.com/ossf/gemara v0.12.1
 )
 
 require (
@@ -43,7 +43,3 @@ require (
 	gopkg.in/ini.v1 v1.67.0 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
-
-// Uncomment if you're working on a dependency locally
-// replace github.com/privateerproj/privateer-sdk => ../privateer-sdk
-// replace github.com/revanite-io/sci => ../sci
