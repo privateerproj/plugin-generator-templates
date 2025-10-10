@@ -2,10 +2,10 @@ package main
 
 import (
 	"fmt"
-
 	"os"
 
-	"plugin-{{ .ServiceName }}/evaluations"
+	"github.com/MYORG/plugin-{{ .ServiceName }}/data"
+	"github.com/MYORG/plugin-{{ .ServiceName }}/evaluation_plans"
 
 	"github.com/privateerproj/privateer-sdk/command"
 	"github.com/privateerproj/privateer-sdk/pluginkit"
@@ -22,12 +22,7 @@ var (
 	BuiltAt = ""
 
 	PluginName   = "{{ .ServiceName }}"
-	RequiredVars = []string{
-		"your",
-		"required",
-		"variables",
-	}
-
+	RequiredVars = []string{}
 )
 
 func main() {
@@ -35,21 +30,31 @@ func main() {
 		Version = fmt.Sprintf("%s-%s", Version, VersionPostfix)
 	}
 
-	// NewVessel may take a payload for all suites to reference
-	pvtrVessel := pluginkit.NewVessel(PluginName, evaluations.LoadData(), RequiredVars)
+	orchestrator := pluginkit.EvaluationOrchestrator{
+		PluginName:    PluginName,
+		PluginVersion: Version,
+		PluginUri:     "",
+	}
 
-	// Evaluation Suite may optionally take a payload to selectively override the data specified in NewVessel
-	pvtrVessel.AddEvaluationSuite("{{ .Metadata.ID | as_id }}", nil, evaluations.{{ .Metadata.ID | as_id }})
+	catalog, err := data.Get{{ simplifiedName .Catalog.Metadata.Id .Catalog.Metadata.Version }}Catalog()
+	if err != nil {
+		fmt.Printf("Error loading OSPS Baseline catalog: %v\n", err)
+		os.Exit(1)
+	}
+
+	catalog.Metadata.Id = "{{ .Catalog.Metadata.Id }}"
+
+	orchestrator.AddEvaluationSuite(data.Loader, evaluation_plans.{{ .Catalog.Metadata.Id | snake_case }}, &catalog)
 
 	runCmd := command.NewPluginCommands(
 		PluginName,
 		Version,
 		VersionPostfix,
 		GitCommitHash,
-		pvtrVessel,
+		&orchestrator,
 	)
 
-	err := runCmd.Execute()
+	err = runCmd.Execute()
 	if err != nil {
 		os.Exit(1)
 	}

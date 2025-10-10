@@ -1,0 +1,21 @@
+{{ $name := simplifiedName .Catalog.Metadata.Id .Catalog.Metadata.Version }}
+
+package data
+
+import (
+	"embed"
+
+	"github.com/ossf/gemara/layer2"
+	"github.com/privateerproj/privateer-sdk/pluginkit"
+)
+
+// We have tight control over the catalog right now while it is local, but
+// if/when we have dynamic retrieval, we should retain the local files for testing
+const dataDir string = "{{ $name }}"
+
+//go:embed {{ $name }}
+var files embed.FS
+
+func Get{{ $name }}Catalog() (layer2.Catalog, error) {
+	return pluginkit.GetPluginCatalog(dataDir, files)
+}
