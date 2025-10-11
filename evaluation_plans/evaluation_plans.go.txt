@@ -15,5 +15,13 @@ var (
             reusable_steps.NotImplemented,
         },
         {{- end }}
+        {{ range .Catalog.ImportedControls }}
+        // {{ .ReferenceId }}
+        {{- range .Entries }}
+        "{{ .ReferenceId }}": {
+            reusable_steps.NotImplemented,
+        },
+        {{- end }}
+        {{- end }}
     }
 )
