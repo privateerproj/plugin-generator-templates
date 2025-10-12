@@ -3,7 +3,7 @@ module github.com/MYORG/plugin-{{ .ServiceName }} // Replace this globally with 
 go 1.23
 
 require (
-	github.com/privateerproj/privateer-sdk v1.9.0
+	github.com/privateerproj/privateer-sdk v1.10.0
 	github.com/ossf/gemara v0.12.1
 )
 
