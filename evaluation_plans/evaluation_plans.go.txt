@@ -11,7 +11,8 @@ var (
     {{ .Catalog.Metadata.Id | snake_case }} = map[string][]layer4.AssessmentStep{
         // For best results, ensure every assessment id is represented in this map 
         {{- range .Requirements }}
-        "{{ . }}": {
+        "{{ .Id }}": {
+            /* {{ .Text }} */
             reusable_steps.NotImplemented,
         },
         {{- end }}
