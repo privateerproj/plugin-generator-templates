@@ -51,7 +51,7 @@ func main() {
 	}
 
 	orchestrator.AddRequiredVars(RequiredVars)
-	err = orchestrator.AddEvaluationSuite("{{ .Catalog.Metadata.Id }}", nil, evaluation_plans.{{ .Catalog.Metadata.Id | snake_case }})
+	err = orchestrator.AddEvaluationSuite("{{ .Metadata.Id }}", nil, evaluation_plans.{{ .Metadata.Id | snake_case }})
 	if err != nil {
 		fmt.Printf("Error adding evaluation suite: %v\n", err)
 		os.Exit(1)
