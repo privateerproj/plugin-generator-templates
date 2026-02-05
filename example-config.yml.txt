@@ -13,7 +13,7 @@ services:
 
     # The policy section may be set at the top level if assessing multiple services via privateer
     policy:
-      catalogs: ["{{ .Catalog.Metadata.Id }}"] # this is the first catalog the plugin is built for, but more may be developed later
+      catalogs: ["{{ .Metadata.Id }}"] # this is the first catalog the plugin is built for, but more may be developed later
       applicability:{{ range .ApplicabilityCategories }}
         - {{ . }}{{ end }}
     vars:
