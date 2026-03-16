@@ -7,8 +7,8 @@ import (
 
 	"os"
 
-	"github.com/MYORG/plugin-{{ .ServiceName }}/data"
-	"github.com/MYORG/plugin-{{ .ServiceName }}/evaluation_plans"
+	"github.com/{{ .Organization }}/{{ .ServiceName }}/data"
+	"github.com/{{ .Organization }}/{{ .ServiceName }}/evaluation_plans"
 
 	"github.com/privateerproj/privateer-sdk/command"
 	"github.com/privateerproj/privateer-sdk/pluginkit"
@@ -40,7 +40,7 @@ func main() {
 	orchestrator := pluginkit.EvaluationOrchestrator{
 		PluginName:    PluginName,
 		PluginVersion: Version,
-		PluginUri:     "github.com/MYORG/plugin-{{ .ServiceName }}",
+		PluginUri:     "github.com/{{ .Organization }}/{{ .ServiceName }}",
 	}
 	orchestrator.AddLoader(data.Loader)
 
