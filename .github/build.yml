@@ -4,6 +4,10 @@ on:
     branches:
       - main
   pull_request:
+    branches:
+      - main
+    paths-ignore:
+      - "**/*.md"
   workflow_dispatch:
 
 permissions:
@@ -27,7 +31,7 @@ jobs:
         run: make test-cov
       - name: test coverage check
         env:
-          TESTCOVERAGE_THRESHOLD: 26
+          TESTCOVERAGE_THRESHOLD: 70
         run: |
           echo "Quality Gate: checking test coverage is above threshold ..."
           echo "Threshold             : $TESTCOVERAGE_THRESHOLD %"
