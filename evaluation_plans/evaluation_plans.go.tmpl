@@ -16,7 +16,7 @@ var (
             reusable_steps.NotImplemented,
         },
         {{- end }}
-        {{ range .Imports.Controls }}
+        {{ range .Imports }}
         // {{ .ReferenceId }}
         {{- range .Entries }}
         "{{ .ReferenceId }}": {
