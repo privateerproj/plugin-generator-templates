@@ -23,10 +23,10 @@ builds:
         goarch: "386"
     ldflags:
       - -s -w
-      - -X main.Version={{.Version}}
+      - -X main.Version={{ .Version }}
       - -X main.VersionPostfix=
-      - -X main.GitCommitHash={{.Commit}}
-      - -X main.BuiltAt={{.Date}}
+      - -X main.GitCommitHash={{ .Commit }}
+      - -X main.BuiltAt={{ .Date }}
 
 archives:
   - formats: ["tar.gz"]
@@ -59,4 +59,4 @@ release:
 
 universal_binaries:
   - replace: true
-    name_template: {{ .ServiceName }}
+    name_template: __SERVICE_NAME__
