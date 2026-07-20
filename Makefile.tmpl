@@ -4,11 +4,15 @@ BUILD_WIN=@env GOOS=windows GOARCH=amd64 go build -o $(PACKNAME).exe
 BUILD_LINUX=@env GOOS=linux GOARCH=amd64 go build -o $(PACKNAME)
 BUILD_MAC=@env GOOS=darwin GOARCH=amd64 go build -o $(PACKNAME)-darwin
 
-release: package release bin
-release-candidate: package release-candidate
-binary: package build
+.PHONY: release release-candidate binary build package test tidy test-cov \
+	release-nix release-win release-mac bin
 
-release: release-nix release-win release-mac
+# `release` and `release-candidate` each previously listed themselves as a
+# prerequisite, which make reports as "Circular <target> <- <target> dependency
+# dropped" and then ignores. `release` was also declared twice.
+release: package release-nix release-win release-mac bin
+release-candidate: package
+binary: package build
 
 build:
 	@echo "  >  Building binary ..."

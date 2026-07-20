@@ -1,0 +1,99 @@
+name: template smoke test
+
+# The real CI for this repo: generate a plugin from these templates and compile
+# it. Everything else here is a template copied into generated plugins.
+#
+# This exists because the templates previously generated a plugin that did not
+# compile, and nothing in CI would have noticed. It also stands in for the
+# dependabot "gomod" updater, which cannot run against go.mod.tmpl -- if the
+# pinned privateer-sdk drifts out of compatibility, this job fails.
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  generate-and-build:
+    # generate-plugin copies every file except .git, so this workflow lands in
+    # every generated plugin too, where it makes no sense -- it would try to
+    # generate a plugin from a plugin. The guard is the inverse of the one on
+    # the plugin-shaped workflows: this one runs ONLY here.
+    #
+    # It is still copied, just inert. Removing it from generated output needs a
+    # skip list in the SDK's generate-plugin walk, which is an SDK change.
+    if: ${{ endsWith(github.repository, '/plugin-generator-templates') }}
+    name: generate and build a plugin
+    runs-on: ubuntu-latest
+    steps:
+      - name: checkout templates
+        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
+        with:
+          persist-credentials: false
+          path: templates
+
+      - uses: actions/setup-go@4a3601121dd01d1626a1e23e37211e3254c1c06c # v6.4.0
+        with:
+          go-version: stable
+
+      - name: install pvtr
+        run: go install github.com/privateerproj/privateer@latest
+
+      # Written here rather than committed: generate-plugin copies every file in
+      # this repo (only .git is skipped) into the generated plugin, so a fixture
+      # on disk would ship inside every plugin anyone generates.
+      #
+      # The catalog id is deliberately lowercase. snake_case preserves casing, so
+      # a lowercase id previously produced an unexported Go identifier that
+      # package main could not reference. This is the case that regressed.
+      - name: write a minimal catalog
+        run: |
+          cat > catalog.yaml <<'EOF'
+          title: Smoke Test Catalog
+          metadata:
+            id: smoke-test
+            type: ControlCatalog
+            gemara-version: v1.0.0
+            description: Minimal catalog used to verify templates generate a compiling plugin.
+            author:
+              id: privateerproj
+              name: Privateer Project
+              type: Human
+          controls:
+            - id: SMOKE.C01
+              family: smoke
+              title: Smoke Control
+              objective: Verify that generated plugins compile.
+              assessment-requirements:
+                - id: SMOKE.C01.TR01
+                  text: The generated plugin MUST compile.
+          EOF
+
+      - name: generate a plugin from these templates
+        run: |
+          pvtr generate-plugin \
+            --local-templates templates \
+            --source-path catalog.yaml \
+            --organization smokeorg \
+            --service-name smokeplugin \
+            --output-dir generated
+
+      # A generated plugin ships no go.sum, so tidy is required before it builds.
+      # That is also what resolves the templated privateer-sdk pin.
+      - name: tidy, build and vet the generated plugin
+        working-directory: generated
+        run: |
+          go mod tidy
+          go build ./...
+          go vet ./...
+
+      - name: confirm the generated binary runs
+        working-directory: generated
+        run: |
+          go build -o smokeplugin .
+          ./smokeplugin version

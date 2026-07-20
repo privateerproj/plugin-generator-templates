@@ -12,6 +12,10 @@ permissions:
 
 jobs:
   lint:
+    # These templates are copied verbatim into generated plugins, where this
+    # job is correct. In the templates repo itself there is no Go code and no
+    # Makefile, so it can only fail. Skip it here, run it there.
+    if: ${{ !endsWith(github.repository, '/plugin-generator-templates') }}
     name: lint
     runs-on: ubuntu-latest
     steps:
