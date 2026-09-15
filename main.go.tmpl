@@ -3,15 +3,15 @@ package main
 import (
 	"embed"
 	"fmt"
-	"path/filepath"
-
 	"os"
+	"path/filepath"
 
 	"github.com/{{ .Organization }}/{{ .ServiceName }}/data"
 	"github.com/{{ .Organization }}/{{ .ServiceName }}/evaluation_plans"
 
 	"github.com/privateerproj/privateer-sdk/command"
 	"github.com/privateerproj/privateer-sdk/pluginkit"
+	"github.com/privateerproj/privateer-sdk/shared"
 )
 
 var (
@@ -24,7 +24,9 @@ var (
 	// BuiltAt is the actual build datetime
 	BuiltAt = ""
 
-	PluginName   = "{{ .ServiceName }}"
+	PluginName = "{{ .ServiceName }}"
+	// RequiredVars are config vars the loader cannot run without. The SDK
+	// refuses to run when one is missing, so steps never see a partial payload.
 	RequiredVars = []string{}
 
 	//go:embed data/catalogs
@@ -37,36 +39,36 @@ func main() {
 		Version = fmt.Sprintf("%s-%s", Version, VersionPostfix)
 	}
 
-	orchestrator := pluginkit.EvaluationOrchestrator{
+	orchestrator := &pluginkit.EvaluationOrchestrator{
 		PluginName:    PluginName,
 		PluginVersion: Version,
 		PluginUri:     "github.com/{{ .Organization }}/{{ .ServiceName }}",
 	}
 	orchestrator.AddLoader(data.Loader)
 
-	err := orchestrator.AddReferenceCatalogs(dataDir, files)
-	if err != nil {
+	if err := orchestrator.AddReferenceCatalogs(dataDir, files); err != nil {
 		fmt.Printf("Error loading catalog: %v\n", err)
-		os.Exit(1)
+		os.Exit(shared.InternalError)
 	}
 
 	orchestrator.AddRequiredVars(RequiredVars)
-	err = orchestrator.AddEvaluationSuite("{{ .Metadata.Id }}", nil, evaluation_plans.Suite_{{ .Metadata.Id | snake_case }})
-	if err != nil {
+
+	// Typed registration: the SDK asserts the payload type once and keeps each
+	// step's function name in the results, so steps need no payload guard.
+	if err := pluginkit.AddEvaluationSuiteTyped(orchestrator, "{{ .Metadata.Id }}", nil, evaluation_plans.Suite_{{ .Metadata.Id | snake_case }}); err != nil {
 		fmt.Printf("Error adding evaluation suite: %v\n", err)
-		os.Exit(1)
+		os.Exit(shared.InternalError)
 	}
 
 	runCmd := command.NewPluginCommands(
 		PluginName,
 		Version,
-		VersionPostfix,
 		GitCommitHash,
-		&orchestrator,
+		BuiltAt,
+		orchestrator,
 	)
 
-	err = runCmd.Execute()
-	if err != nil {
-		os.Exit(1)
+	if err := runCmd.Execute(); err != nil {
+		os.Exit(shared.InternalError)
 	}
 }
