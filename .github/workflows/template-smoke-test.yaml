@@ -72,6 +72,7 @@ jobs:
               assessment-requirements:
                 - id: SMOKE.C01.TR01
                   text: The generated plugin MUST compile.
+                  applicability: [default]
           EOF
 
       - name: generate a plugin from these templates
@@ -97,3 +98,13 @@ jobs:
         run: |
           go build -o smokeplugin .
           ./smokeplugin version
+
+      # Runs an evaluation with the generated example config unchanged. Without
+      # applicability on the requirement, the SDK reports it Unknown instead of
+      # running the step, so this proves the scaffold evaluates, not just builds.
+      - name: evaluate with the example config
+        working-directory: generated
+        run: |
+          cp example-config.yml config.yml
+          ./smokeplugin debug --target myService1
+          grep -q 'Not implemented' evaluation_results/myService1/myService1.yaml

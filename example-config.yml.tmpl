@@ -1,10 +1,10 @@
 loglevel: # default: info; options: trace | debug | info | warn | error
 write-directory: # default: evaluation_results 
 write: # default: true; false will disable writing the output to file
-output: # default: yaml; options: yaml | json | sarif
+output: # default: yaml; options: yaml | json | sarif | gemara
 services:
   # if there are multiple entries here, multiple of the same or different plugins can be run via Privateer
-  # while running via debug, only one service can be run at a time, and must be specified using --service=<service_name>
+  # while running via debug, only one service can be run at a time, and must be specified using --target=<service_name>
   #
   # Replace the example service name below with your service id/name. Multiple services
   # may be provided at the same level as separate map entries.
