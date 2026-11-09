@@ -9,7 +9,10 @@ import (
 	"github.com/{{ .Organization }}/{{ .ServiceName }}/data"
 	"github.com/{{ .Organization }}/{{ .ServiceName }}/evaluation_plans"
 
+	"github.com/gemaraproj/go-gemara"
+
 	"github.com/privateerproj/privateer-sdk/command"
+	"github.com/privateerproj/privateer-sdk/config"
 	"github.com/privateerproj/privateer-sdk/pluginkit"
 	"github.com/privateerproj/privateer-sdk/shared"
 )
@@ -43,8 +46,18 @@ func main() {
 		PluginName:    PluginName,
 		PluginVersion: Version,
 		PluginUri:     "github.com/{{ .Organization }}/{{ .ServiceName }}",
+		// Publisher and License are inert at run time and required only to publish
+		// to grc.store: Publisher is your grc.store namespace, License an SPDX expression.
+		Publisher: "",
+		License:   "",
 	}
 	orchestrator.AddLoader(data.Loader)
+
+	// Identifies what was evaluated in the log's target field, e.g. from
+	// c.Vars. Any field left empty falls back to the service name.
+	orchestrator.AddTargetBuilder(func(c *config.Config) gemara.Resource {
+		return gemara.Resource{}
+	})
 
 	if err := orchestrator.AddReferenceCatalogs(dataDir, files); err != nil {
 		fmt.Printf("Error loading catalog: %v\n", err)
