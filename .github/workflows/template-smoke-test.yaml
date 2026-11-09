@@ -108,3 +108,14 @@ jobs:
           cp example-config.yml config.yml
           ./smokeplugin debug --target myService1
           grep -q 'Not implemented' evaluation_results/myService1/myService1.yaml
+
+      # The path users take: pvtr resolves `plugin:` through its install
+      # manifest, so the example config's local/<name> must match what
+      # `pvtr install --local` records.
+      - name: install locally and run under pvtr
+        working-directory: generated
+        run: |
+          rm -rf evaluation_results
+          pvtr install --local ./smokeplugin
+          pvtr run
+          grep -q 'Not implemented' evaluation_results/myService1/myService1.yaml

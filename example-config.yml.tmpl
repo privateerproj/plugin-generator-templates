@@ -9,7 +9,7 @@ services:
   # Replace the example service name below with your service id/name. Multiple services
   # may be provided at the same level as separate map entries.
   myService1: # unique name/id for the evaluation
-    plugin: {{ .ServiceName }} # required while running via Privateer
+    plugin: local/{{ .ServiceName }} # as pvtr installed it: local/<name> after `pvtr install --local`, <namespace>/<name> from grc.store
 
     # The policy section may be set at the top level if assessing multiple services via privateer
     policy:
