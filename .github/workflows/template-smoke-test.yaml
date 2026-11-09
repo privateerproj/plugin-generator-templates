@@ -42,7 +42,7 @@ jobs:
           go-version: stable
 
       - name: install pvtr
-        run: go install github.com/privateerproj/privateer@latest
+        run: go install github.com/privateerproj/pvtr@latest
 
       # Written here rather than committed: generate-plugin copies every file in
       # this repo (only .git is skipped) into the generated plugin, so a fixture
