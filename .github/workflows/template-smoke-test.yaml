@@ -118,4 +118,5 @@ jobs:
           rm -rf evaluation_results
           pvtr install --local ./smokeplugin
           pvtr run
-          grep -q 'Not implemented' evaluation_results/myService1/myService1.yaml
+          # pvtr run lowercases service names (viper keys); debug keeps --target as typed.
+          grep -q 'Not implemented' evaluation_results/myservice1/myservice1.yaml
