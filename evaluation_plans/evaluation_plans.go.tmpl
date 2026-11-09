@@ -1,28 +1,41 @@
 package evaluation_plans
 
 import (
-    "github.com/gemaraproj/go-gemara"
-    "github.com/{{ .Organization }}/{{ .ServiceName }}/evaluation_plans/reusable_steps"
+	"github.com/gemaraproj/go-gemara"
+
+	"github.com/{{ .Organization }}/{{ .ServiceName }}/data"
+	"github.com/{{ .Organization }}/{{ .ServiceName }}/evaluation_plans/reusable_steps"
 )
 
+// TypedStep is the signature every step in this plugin uses. It receives the
+// plugin's own data.Payload rather than an untyped any; the SDK's typed
+// registration helpers (pluginkit.AddEvaluationSuiteTyped and
+// ...TypedForAllCatalogs) adapt it to gemara.AssessmentStep. Always register
+// through those helpers: wrapping a step in a local closure erases its
+// function name from the evaluation log.
+type TypedStep func(data.Payload) (gemara.Result, string, gemara.ConfidenceLevel)
+
 var (
-    // Add more entries here if other catalogs or catalog versions are adopted by the plugin
-    // Then use orchestrator.AddEvaluationSuite to make these available to the user
-    {{ .Metadata.Id | snake_case }} = map[string][]gemara.AssessmentStep{
-        // For best results, ensure every assessment id is represented in this map 
-        {{- range .Requirements }}
-        "{{ .Id }}": {
-            /* {{ .Text }} */
-            reusable_steps.NotImplemented,
-        },
-        {{- end }}
-        {{ range .Imports }}
-        // {{ .ReferenceId }}
-        {{- range .Entries }}
-        "{{ .ReferenceId }}": {
-            reusable_steps.NotImplemented,
-        },
-        {{- end }}
-        {{- end }}
-    }
+	// Add more entries here if other catalogs or catalog versions are adopted by the plugin
+	// Then use pluginkit.AddEvaluationSuiteTyped to make these available to the user
+	// Exported so package main can reference it. snake_case preserves the
+	// catalog id's casing, and most ids are lowercase, so the Suite_ prefix
+	// is what guarantees the identifier is exported.
+	Suite_{{ .Metadata.Id | snake_case }} = map[string][]TypedStep{
+		// For best results, ensure every assessment id is represented in this map 
+		{{- range .Requirements }}
+		"{{ .Id }}": {
+			/* {{ .Text }} */
+			reusable_steps.NotImplemented,
+		},
+		{{- end }}
+		{{- range .Imports }}
+		// {{ .ReferenceId }}
+		{{- range .Entries }}
+		"{{ .ReferenceId }}": {
+			reusable_steps.NotImplemented,
+		},
+		{{- end }}
+		{{- end }}
+	}
 )

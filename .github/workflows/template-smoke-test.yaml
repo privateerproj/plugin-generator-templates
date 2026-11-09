@@ -1,0 +1,122 @@
+name: template smoke test
+
+# The real CI for this repo: generate a plugin from these templates and compile
+# it. Everything else here is a template copied into generated plugins.
+#
+# This exists because the templates previously generated a plugin that did not
+# compile, and nothing in CI would have noticed. It also stands in for the
+# dependabot "gomod" updater, which cannot run against go.mod.tmpl -- if the
+# pinned privateer-sdk drifts out of compatibility, this job fails.
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  generate-and-build:
+    # generate-plugin copies every file except .git, so this workflow lands in
+    # every generated plugin too, where it makes no sense -- it would try to
+    # generate a plugin from a plugin. The guard is the inverse of the one on
+    # the plugin-shaped workflows: this one runs ONLY here.
+    #
+    # It is still copied, just inert. Removing it from generated output needs a
+    # skip list in the SDK's generate-plugin walk, which is an SDK change.
+    if: ${{ endsWith(github.repository, '/plugin-generator-templates') }}
+    name: generate and build a plugin
+    runs-on: ubuntu-latest
+    steps:
+      - name: checkout templates
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+          path: templates
+
+      - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
+        with:
+          go-version: stable
+
+      - name: install pvtr
+        run: go install github.com/privateerproj/pvtr@latest
+
+      # Written here rather than committed: generate-plugin copies every file in
+      # this repo (only .git is skipped) into the generated plugin, so a fixture
+      # on disk would ship inside every plugin anyone generates.
+      #
+      # The catalog id is deliberately lowercase. snake_case preserves casing, so
+      # a lowercase id previously produced an unexported Go identifier that
+      # package main could not reference. This is the case that regressed.
+      - name: write a minimal catalog
+        run: |
+          cat > catalog.yaml <<'EOF'
+          title: Smoke Test Catalog
+          metadata:
+            id: smoke-test
+            type: ControlCatalog
+            gemara-version: v1.0.0
+            description: Minimal catalog used to verify templates generate a compiling plugin.
+            author:
+              id: privateerproj
+              name: Privateer Project
+              type: Human
+          controls:
+            - id: SMOKE.C01
+              family: smoke
+              title: Smoke Control
+              objective: Verify that generated plugins compile.
+              assessment-requirements:
+                - id: SMOKE.C01.TR01
+                  text: The generated plugin MUST compile.
+                  applicability: [default]
+          EOF
+
+      - name: generate a plugin from these templates
+        run: |
+          pvtr generate-plugin \
+            --local-templates templates \
+            --source-path catalog.yaml \
+            --organization smokeorg \
+            --service-name smokeplugin \
+            --output-dir generated
+
+      # A generated plugin ships no go.sum, so tidy is required before it builds.
+      # That is also what resolves the templated privateer-sdk pin.
+      - name: tidy, build and vet the generated plugin
+        working-directory: generated
+        run: |
+          go mod tidy
+          go build ./...
+          go vet ./...
+
+      - name: confirm the generated binary runs
+        working-directory: generated
+        run: |
+          go build -o smokeplugin .
+          ./smokeplugin version
+
+      # Runs an evaluation with the generated example config unchanged. Without
+      # applicability on the requirement, the SDK reports it Unknown instead of
+      # running the step, so this proves the scaffold evaluates, not just builds.
+      - name: evaluate with the example config
+        working-directory: generated
+        run: |
+          cp example-config.yml config.yml
+          ./smokeplugin debug --target myService1
+          grep -q 'Not implemented' evaluation_results/myService1/myService1.yaml
+
+      # The path users take: pvtr resolves `plugin:` through its install
+      # manifest, so the example config's local/<name> must match what
+      # `pvtr install --local` records.
+      - name: install locally and run under pvtr
+        working-directory: generated
+        run: |
+          rm -rf evaluation_results
+          pvtr install --local ./smokeplugin
+          pvtr run
+          # pvtr run lowercases service names (viper keys); debug keeps --target as typed.
+          grep -q 'Not implemented' evaluation_results/myservice1/myservice1.yaml

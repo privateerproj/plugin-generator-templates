@@ -1,19 +1,16 @@
 ---
+# NOTE: there is deliberately no "gomod" entry here.
+#
+# This repo holds go.mod.tmpl, not go.mod, so dependabot's Go updater aborts
+# with "No go.mod files found" on every run. That failure was silent (it happens
+# in a scheduled run, not PR CI), and it is why the templated privateer-sdk pin
+# drifted eight minor versions behind the released SDK before anyone noticed.
+#
+# Drift is caught instead by .github/workflows/template-smoke-test.yaml, which
+# generates a plugin from these templates and compiles it. That verifies the
+# pinned SDK actually works, which a version bump alone never did.
 version: 2
 updates:
-  - package-ecosystem: "gomod"
-    directory: "/"
-    schedule:
-      interval: "weekly"
-    commit-message:
-      prefix: "chore(deps)"
-    labels: ["go", "dependencies"]
-    groups:
-      dependencies:
-        applies-to: version-updates
-        update-types:
-          - "minor"
-          - "patch"
   - package-ecosystem: "github-actions"
     directory: "/"
     schedule:
