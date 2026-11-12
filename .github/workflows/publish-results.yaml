@@ -1,0 +1,91 @@
+---
+name: "Publish OSPS Baseline results to grc.store"
+
+# Scans this repository against the OSPS Baseline with the openssf/github-repo
+# plugin and publishes the signed EvaluationLog to grc.store, where it shows
+# up on this plugin's target page.
+#
+# Needs the GRC_STORE_NAMESPACE repository (or organization) variable set to
+# the plugin's grc.store namespace, the same value as Publisher in main.go.
+#
+# Runs on main only: the hub trusts this repo as a CI publisher for that
+# namespace at refs/heads/main, and refuses a run from any other ref.
+# Weekly, not per commit: every published run is a permanent coordinate, and
+# the hub stores one log per target and catalog every ten minutes.
+on:
+  workflow_dispatch:
+    inputs:
+      dry-run:
+        description: "Run the scan but publish nothing (bundles land in the pvtr-bundles artifact)"
+        type: boolean
+        default: true
+  schedule:
+    - cron: "17 6 * * 1"
+
+permissions: {}
+
+jobs:
+  version:
+    name: version
+    # Copied verbatim into generated plugins; there is nothing to scan here.
+    if: ${{ !endsWith(github.repository, '/plugin-generator-templates') }}
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read # Read the latest release tag
+    outputs:
+      target: ${{ steps.tag.outputs.target }}
+    steps:
+      - uses: step-security/harden-runner@46b06cea07f9e64621fdf066ba77ac6915163d43 # v2.22.3
+        with:
+          egress-policy: audit
+      - name: latest release
+        id: tag
+        env:
+          GH_TOKEN: ${{ github.token }}
+          NAMESPACE: ${{ vars.GRC_STORE_NAMESPACE }}
+        run: |
+          set -euo pipefail
+          if [ -z "$NAMESPACE" ]; then
+            echo "::error::Set the GRC_STORE_NAMESPACE variable to this plugin's grc.store namespace (Publisher in main.go)."
+            exit 1
+          fi
+          tag=$(gh release view --repo "$GITHUB_REPOSITORY" --json tagName --jq .tagName)
+          echo "target=${NAMESPACE}/__SERVICE_NAME__@${tag#v}" >> "$GITHUB_OUTPUT"
+
+  results:
+    name: results
+    needs: version
+    permissions:
+      contents: read # The scanner reads this repository through the job token
+      id-token: write # Trusted publishing to the hub and the Sigstore signing identity
+      # The called workflow's report job requests it, and GitHub checks every
+      # called job at startup, even one that upload-sarif: false skips.
+      security-events: write
+    # Pinned by tag, not SHA, on purpose: the hub compares the signing
+    # certificate's workflow ref to this exact tag and rejects a SHA-pinned
+    # call. The default hub (https://hub.grc.store) trusts v1, an immutable
+    # release.
+    uses: revanite-io/pvtr-publish-results/.github/workflows/publish.yml@v1 # zizmor: ignore[unpinned-uses] the hub requires the tag
+    with:
+      target: ${{ needs.version.outputs.target }}
+      license: CC0-1.0
+      # A scheduled run has no inputs; it publishes.
+      dry-run: ${{ inputs.dry-run == true }}
+    secrets:
+      # Inline because the plugin's token can only come from its config vars.
+      # The job token is read-only and scoped to this repository, so settings
+      # the scanner can't read (admin, org MFA) report "needs review".
+      # revanite-io/pvtr-publish-results#10 tracks octo-sts support.
+      config: |
+        targets:
+          __SERVICE_NAME__:
+            plugin: openssf/github-repo
+            policy:
+              catalogs:
+                - osps-baseline
+              applicability:
+                - maturity-1
+            vars:
+              owner: __ORGANIZATION__
+              repo: __SERVICE_NAME__
+              token: ${{ secrets.GITHUB_TOKEN }}

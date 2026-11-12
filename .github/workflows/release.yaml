@@ -18,6 +18,9 @@ jobs:
     with:
       publish: true
       release-config-name: release-drafter.yaml
+      # Only cut a release when a merged PR carries the 'release' label;
+      # workflow_dispatch still releases unconditionally.
+      release-only-with-label: true
     secrets:
       github-token: ${{ secrets.GITHUB_TOKEN }}
   goreleaser:
