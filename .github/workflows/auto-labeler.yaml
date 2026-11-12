@@ -10,6 +10,9 @@ jobs:
   auto_labeler:
     permissions:
       contents: read
+      # The reusable workflow requests issues: write; a caller granting less
+      # makes every run a startup_failure.
+      issues: write
       pull-requests: write
     uses: github-community-projects/ospo-reusable-workflows/.github/workflows/auto-labeler.yaml@ee8277bd76ef808b3a6e0bdd1f5a46a520a12c5d # v2.3.1
     with:
