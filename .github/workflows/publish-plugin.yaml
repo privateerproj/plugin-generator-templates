@@ -1,0 +1,127 @@
+---
+name: "Publish plugin to grc.store"
+
+# Manual-only on purpose. The first successful publish TOFU-pins the signer
+# identity of this plugin's coordinate to THIS workflow file's path, so
+# it has to be a deliberate act and every later publish must come from this
+# same file. Add a `release: {types: [published]}` trigger once the manual run
+# is proven.
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Tag to publish (e.g. v0.2.0). Leave empty for the latest release."
+        required: false
+        default: ""
+      hub-url:
+        description: "grc.store hub to publish to"
+        required: true
+        type: choice
+        default: "https://hub.preview.grc.store"
+        options:
+          - "https://hub.preview.grc.store"
+          - "https://hub.grc.store"
+
+permissions: {}
+
+# The first successful publish TOFU-pins the signer, so never let two publishes
+# race; queue them instead.
+concurrency:
+  group: publish-plugin
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    name: publish
+    # Copied verbatim into generated plugins; there is nothing to publish here.
+    if: ${{ !endsWith(github.repository, '/plugin-generator-templates') }}
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read # Clone the repository at the release tag, read releases
+      actions: read # Download the Release run's release-dist artifact
+      # Mints two distinct OIDC tokens: the hub push token (audience =
+      # ci_audience) and the Sigstore signing identity (audience = sigstore,
+      # requested by pvtr itself). The hub must list this repo as a
+      # ci_publishers trusted publisher for the plugin's namespace (Publisher in
+      # main.go).
+      id-token: write
+    env:
+      PVTR_VERSION: v0.24.1
+      PVTR_HUB_URL: ${{ inputs.hub-url }}
+    steps:
+      - uses: step-security/harden-runner@46b06cea07f9e64621fdf066ba77ac6915163d43 # v2.22.3
+        with:
+          egress-policy: audit
+      - name: resolve tag and release build
+        id: release
+        # An empty tag means the latest release. The Release workflow uploads
+        # its GoReleaser dist dir as `release-dist` (kept 1 day); reusing it
+        # skips a rebuild of every platform, and the hub then attests the same
+        # bytes the GitHub release did. No such artifact (expired, or a tag
+        # released some other way) falls back to rebuilding below.
+        env:
+          GH_TOKEN: ${{ github.token }}
+          INPUT_TAG: ${{ inputs.tag }}
+        run: |
+          set -euo pipefail
+          tag="${INPUT_TAG:-$(gh release view --repo "$GITHUB_REPOSITORY" --json tagName --jq .tagName)}"
+          sha=$(gh api "repos/${GITHUB_REPOSITORY}/commits/${tag}" --jq .sha)
+          run_id=$(gh api "repos/${GITHUB_REPOSITORY}/actions/runs?head_sha=${sha}&status=success&per_page=100" \
+            --jq '[.workflow_runs[] | select(.name == "Release")][0].id // empty')
+          if [ -n "$run_id" ] && ! gh api "repos/${GITHUB_REPOSITORY}/actions/runs/${run_id}/artifacts" \
+            --jq '.artifacts[] | select(.name == "release-dist" and (.expired | not)) | .id' | grep -q .; then
+            run_id=""
+          fi
+          echo "tag=${tag}" >> "$GITHUB_OUTPUT"
+          echo "run-id=${run_id}" >> "$GITHUB_OUTPUT"
+          echo "Publishing ${tag} (${sha}); release build: ${run_id:-none, rebuilding}"
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ steps.release.outputs.tag }}
+          persist-credentials: false
+      - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
+        with:
+          go-version-file: go.mod
+      - name: install pvtr
+        # go install names the binary after the module path's last element: pvtr.
+        # pvtr can require a newer Go than this repo's go.mod (setup-go
+        # pins GOTOOLCHAIN=local to the go.mod version); auto lets go fetch
+        # the toolchain pvtr needs for this step only.
+        env:
+          GOTOOLCHAIN: auto
+        run: go install "github.com/privateerproj/pvtr@${PVTR_VERSION}"
+      - name: download the release build
+        if: steps.release.outputs.run-id != ''
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: release-dist
+          path: dist
+          run-id: ${{ steps.release.outputs.run-id }}
+          github-token: ${{ github.token }}
+      - name: restore execute bits
+        # Artifacts don't keep file modes, and pvtr runs the host binary to
+        # read its publish manifest.
+        if: steps.release.outputs.run-id != ''
+        run: find dist -mindepth 2 -type f -exec chmod +x {} +
+      # Fallback only. A rebuild is not byte-identical to the release-attested
+      # artifacts (BuiltAt is stamped per build), so the hub's Sigstore bundle
+      # then attests these bytes, not the GitHub release's.
+      - if: steps.release.outputs.run-id == ''
+        uses: goreleaser/goreleaser-action@a4f02ab5355a589de60d917a659ce617ed19b3de # v7.3.0
+        with:
+          version: "~> v2"
+          args: build --clean
+      - name: publish
+        # pvtr reads the plugin's coordinate, license and catalog linkage from
+        # the built binary itself.
+        run: |
+          set -euo pipefail
+          # jq -e fails the step on a missing/null field; pipefail covers the curls.
+          audience=$(curl -fsSL "${PVTR_HUB_URL}/.well-known/grc-store-configuration" | jq -er '.ci_audience // empty')
+          audience_uri=$(jq -rn --arg a "$audience" '$a|@uri')
+          PVTR_TOKEN=$(curl -fsSL \
+            -H "Authorization: bearer ${ACTIONS_ID_TOKEN_REQUEST_TOKEN}" \
+            "${ACTIONS_ID_TOKEN_REQUEST_URL}&audience=${audience_uri}" | jq -er '.value // empty')
+          echo "::add-mask::${PVTR_TOKEN}"
+          export PVTR_TOKEN
+          pvtr publish

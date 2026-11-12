@@ -8,7 +8,10 @@ before:
     - go mod tidy
 
 builds:
-  - env:
+    # pvtr publish looks for a binary named after the plugin id (PluginName in
+    # main.go); the shipped file must match the entrypoint.
+  - binary: __SERVICE_NAME__
+    env:
       - CGO_ENABLED=0
     goos:
       - linux
@@ -55,6 +58,9 @@ changelog:
   disable: true
 
 release:
+  # The release workflow's draft release owns the GitHub release; it refuses a
+  # config where GoReleaser would also create one.
+  disable: true
   mode: keep-existing
 
 universal_binaries:
