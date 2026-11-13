@@ -75,7 +75,6 @@ jobs:
       # Inline because the plugin's token can only come from its config vars.
       # The job token is read-only and scoped to this repository, so settings
       # the scanner can't read (admin, org MFA) report "needs review".
-      # revanite-io/pvtr-publish-results#10 tracks octo-sts support.
       config: |
         targets:
           __SERVICE_NAME__:
